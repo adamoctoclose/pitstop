@@ -41,7 +41,7 @@ step "create-name-space-clone-1" {
                 {
                 	Write-Host "Namespace #{Project.Pitstop.Namespace} already exists, moving on ..."
                 }
-                EOT
+                    EOT
             Octopus.Action.Script.ScriptSource = "Inline"
             Octopus.Action.Script.Syntax = "PowerShell"
             OctopusUseBundledTooling = "False"
