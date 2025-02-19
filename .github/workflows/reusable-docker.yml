@@ -1,98 +1,35 @@
-name: Reusable Docker
-
-permissions:
-  packages: write
+name: Build and Push Docker Image
 
 on:
-  workflow_call:
-    inputs:
-      service-name:  
-        required: true
-        type: string
-      docker-image-name:
-        required: true
-        type: string
-      docker-image-version:
-        required: true
-        type: string
-      feature-branch-name:
-        required: false
-        type: string
-      environment-name:
-        required: false
-        type: string
-      channel-name:
-        required: false
-        type: string
-env:
-  OCTOPUS_URL: ${{ secrets.OCTOPUS_URL }}
-  OCTOPUS_API_KEY: ${{ secrets.OCTOPUS_API_KEY }}
-  OCTOPUS_SPACE: ${{ secrets.OCTOPUS_SPACE }}
+  push:
+    branches:
+      - main
+
 
 jobs:
+  create-version-number:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}.${{ github.run_number }}
+    steps:
+      - id: version
+        run: echo "version=$(date +'%Y.%m.%d')" >> "$GITHUB_OUTPUT"
+
   build:
     runs-on: ubuntu-latest
-    
+    needs: create-version-number
+
     steps:
-       
-       - uses: actions/checkout@v3
-       
-       - name: GHCR Login
-         uses: docker/login-action@v3
-         with:
-          registry: https://ghcr.io
+      - uses: actions/checkout@v3
+
+      - name: GHCR Login
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-       - name: Build Docker Image
-         working-directory: src/${{ inputs.service-name }}
-         run:  | 
-           docker build --tag ghcr.io/adamoctoclose/${{ inputs.docker-image-name }}:${{ inputs.docker-image-version }}${{ inputs.feature-branch-name }} .
-           docker push ghcr.io/adamoctoclose/${{ inputs.docker-image-name }}:${{ inputs.docker-image-version }}${{ inputs.feature-branch-name }}
-       
-      #  - name: Docker Hub Login
-      #    uses: docker/login-action@v3
-      #    with:
-      #     username: ${{ secrets.DOCKER_USERNAME }}
-      #     password: ${{ secrets.DOCKER_PASSWORD }}
-
-      #  - name: Build Docker Image
-      #    working-directory: src/${{ inputs.service-name }}
-      #    run:  | 
-      #      docker build --tag adamoctoclose/${{ inputs.docker-image-name }}:${{ inputs.docker-image-version }}${{ inputs.feature-branch-name }} .
-      #      docker push adamoctoclose/${{ inputs.docker-image-name }}:${{ inputs.docker-image-version }}${{ inputs.feature-branch-name }}
-
-       - name: Create Octopus Release
-         uses: OctopusDeploy/create-release-action@v3
-         with: 
-            project: ${{ inputs.docker-image-name }}
-            release_number: ${{ inputs.docker-image-version }}${{ inputs.feature-branch-name }}
-            channel: ${{ inputs.channel-name }}
-            git_ref: main
-        
-       
-       - name: Create Build Information
-         uses: OctopusDeploy/push-build-information-action@v3.0.1
-         with: 
-            packages: ${{ inputs.docker-image-name }}
-            branch: ${{ inputs.feature-branch-name }} 
-            version: ${{ inputs.docker-image-version }}
-
-       - name: Deploy Octopus Release
-         uses: OctopusDeploy/deploy-release-tenanted-action@v3.0.3
-         with: 
-             project: ${{ inputs.docker-image-name }}
-             release_number: ${{ inputs.docker-image-version }}${{ inputs.feature-branch-name }}
-             environment: ${{ inputs.environment-name }}
-             tenants: internal
-             variables: Project.Pitstop.Branch:${{ inputs.feature-branch-name }}
-      
-       - name: Create Production Octopus Release
-         if: ${{ inputs.environment-name == 'test' }}
-         uses: OctopusDeploy/create-release-action@v3
-         with: 
-            project: _Orchestration
-            release_number: ${{ inputs.docker-image-version }}
-            channel: Default
-            git_ref: main
-            
+      - name: Build Docker Image
+        run: |
+          docker build -f src/WebApp/Dockerfile -t ghcr.io/adamoctoclose/pitstop-personal-webapp:${{ needs.create-version-number.outputs.version }} src/WebApp
+          docker push ghcr.io/adamoctoclose/pitstop-personal-webapp:${{ needs.create-version-number.outputs.version }}
