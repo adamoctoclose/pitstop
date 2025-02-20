@@ -1,3 +1,7 @@
 variable "Project.Pitstop.Namespace" {
     value "pitstop-#{Octopus.Environment.Name | ToLower}" {}
 }
+
+variable "Project.Pitstop.Image" {
+    value "ghcr.io/adamoctoclose/#{Octopus.Project.Name}:#{Octopus.Release.Number}" {}
+}
