@@ -1,3 +1,40 @@
+step "create-namespace" {
+    name = "Create Namespace"
+    properties = {
+        Octopus.Action.TargetRoles = "pitstop"
+    }
+
+    action {
+        action_type = "Octopus.Script"
+        properties = {
+            Octopus.Action.RunOnServer = "false"
+            Octopus.Action.Script.ScriptBody = <<-EOT
+                kubectl create namespace #{Project.Pitstop.Namespace}
+                
+                # Get existing namespaces
+                Write-Host "Retrieving namespaces ..."
+                $namespaces = (kubectl get namespaces -o JSON | ConvertFrom-Json)
+                
+                # Check to see if namespace exists
+                if ($null -eq ($namespaces.Items | Where-Object {$_.metadata.name -eq $OctopusParameters["Project.Pitstop.Namespace"]}))
+                {
+                	# Create the namespace
+                    Write-Host "Namespace #{Project.Pitstop.Namespace} doesn't exist, creating ..."
+                    kubectl create namespace $OctopusParameters["Project.Pitstop.Namespace"]
+                }
+                else
+                {
+                	Write-Host "Namespace #{Project.Pitstop.Namespace} already exists, moving on ..."
+                }
+                EOT
+            Octopus.Action.Script.ScriptSource = "Inline"
+            Octopus.Action.Script.Syntax = "PowerShell"
+            OctopusUseBundledTooling = "False"
+        }
+        worker_pool_variable = ""
+    }
+}
+
 step "deploy-kubernetes-yaml" {
     name = "Deploy Kubernetes YAML"
     properties = {
