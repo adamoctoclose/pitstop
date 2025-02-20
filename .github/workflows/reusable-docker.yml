@@ -31,5 +31,10 @@ jobs:
 
       - name: Build Docker Image
         run: |
+          docker build -f src/TimeService/Dockerfile -t ghcr.io/adamoctoclose/pitstop-personal-time-service:${{ needs.create-version-number.outputs.version }} src/WebApp
+          docker push ghcr.io/adamoctoclose/pitstop-personal-time-service:${{ needs.create-version-number.outputs.version }}
+
+      - name: Build Docker Image
+        run: |
           docker build -f src/WebApp/Dockerfile -t ghcr.io/adamoctoclose/pitstop-personal-webapp:${{ needs.create-version-number.outputs.version }} src/WebApp
           docker push ghcr.io/adamoctoclose/pitstop-personal-webapp:${{ needs.create-version-number.outputs.version }}
