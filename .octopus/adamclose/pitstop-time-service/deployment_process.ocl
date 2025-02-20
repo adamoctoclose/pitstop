@@ -1,0 +1,14 @@
+step "process-template" {
+    name = "Process Template"
+
+    action {
+        action_type = "Octopus.ProcessTemplate"
+        properties = {
+            #{Project.Pitstop.Manifest} = "src/deployment/time-service.yaml"
+            Octopus.Action.ProcessTemplate.Reference.Slug = "pitstop-services"
+            Octopus.Action.ProcessTemplate.Reference.VersioningOption = "AlwaysUseLatest"
+            Octopus.Action.RunOnServer = "false"
+        }
+        worker_pool_variable = ""
+    }
+}
