@@ -1,0 +1,3 @@
+variable "Project.Pitstop.Namespace" {
+    value "pitstop-#{Octopus.Environment.Name | ToLower}" {}
+}
