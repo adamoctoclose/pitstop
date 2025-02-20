@@ -1,0 +1,14 @@
+step "pitstop-microservice" {
+    name = "Pitstop Microservice "
+
+    action {
+        action_type = "Octopus.ProcessTemplate"
+        properties = {
+            #{Project.Pitstop.Manifest} = "/scr/auditService.yaml"
+            Octopus.Action.ProcessTemplate.Reference.Slug = "pitstop-services"
+            Octopus.Action.ProcessTemplate.Reference.VersioningOption = "AlwaysUseLatest"
+            Octopus.Action.RunOnServer = "false"
+        }
+        worker_pool_variable = ""
+    }
+}
